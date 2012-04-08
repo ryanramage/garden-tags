@@ -73,7 +73,8 @@ function tags_new() {
 }
 
 function tags_show(tagHash) {
-
+    activeNav('tree');
+    db.getDoc()
 }
 
 function tags_tree() {
