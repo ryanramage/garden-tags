@@ -1,6 +1,6 @@
 {{#each tags_replicating}}
 <tr>
   <td>{{doc.target}}</td>
-  <td><button class="btn btn-danger btn-small">Stop Sync</button> </td>
+  <td><button class="btn btn-danger btn-small stop-sync" data-id="{{doc._id}}">Stop Sync</button> </td>
 </tr>
 {{/each}}

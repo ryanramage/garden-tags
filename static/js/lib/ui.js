@@ -216,3 +216,20 @@ function runSync(tags_db, db_to_sync, secure) {
         window.location.reload();
     });
 }
+
+$(function(){
+    $('.stop-sync').live('click', function() {
+        var me = $(this);
+        var tr = me.closest('tr');
+        var id = me.data('id');
+        replicator_db.getDoc(id, function(err, doc) {
+            if (err) return humane.error(err);
+            replicator_db.removeDoc(doc, function(err, resp) {
+                if (err) return humane.error(err);
+                tr.hide(500, function() {
+                    tr.remove();
+                })
+            })
+        });
+    });
+})
