@@ -124,14 +124,19 @@ function adminSection() {
         replicator_db.allDocs({include_docs:true},function(err, data) {
             if (err) return humane.error(err);
 
-            var tags_replicating = _.filter(data.rows, function(row){
-                if (!row.doc.garden_tag_sync) return false;
-                if (row.doc._replication_state !==  "triggered") return false;
-                if (!row.doc.continuous) return false;
-                return true;
+            db.info(function(err, resp) {
+                var us =  resp.db_name;
+                var tags_replicating = _.filter(data.rows, function(row){
+                    if (!row.doc.garden_tag_sync) return false;
+                    if (row.doc._replication_state !==  "triggered") return false;
+                    if (!row.doc.continuous) return false;
+                    if (row.doc.source !== us) return false;
+                    return true;
+                });
+
+                $('.replicating').html(handlebars.templates['replicating.html']({tags_replicating : tags_replicating}));
             });
-            console.log(tags_replicating);
-            $('.replicating').html(handlebars.templates['replicating.html']({tags_replicating : tags_replicating}));
+
 
 
             async.series([
@@ -176,19 +181,38 @@ function startSync(db_to_sync) {
     db.info(function(err, resp) {
         var tags_db = resp.db_name;
 
-
-        // from tags to other
-        var replication_doc_to_other = {
-            source : tags_db,
-            target : db_to_sync,
-            continuous : true,
-            filter : ddocName + '/tags_only',
-            garden_tag_sync : true
-        };
-        replicator_db.saveDoc(replication_doc_to_other, function(err, resp) {
-
+        $.ajax({
+          url : './_couch/' + db_to_sync +  '/_security',
+          dataType : 'json',
+          type: 'GET',
+          success : function(data) {
+              if (_.isEqual(data, {})) return runSync(tags_db, db_to_sync, false);
+              return runSync(tags_db, db_to_sync, true);
+          },
+          error : function() {
+              runSync(tags_db, db_to_sync, false);
+          }
         });
-
     })
+}
 
+
+
+
+function runSync(tags_db, db_to_sync, secure) {
+    // from tags to other
+    var replication_doc_to_other = {
+        source : tags_db,
+        target : db_to_sync,
+        continuous : true,
+        filter : ddocName + '/tags_only',
+        garden_tag_sync : true
+    };
+    if (secure) {
+        replication_doc_to_other.user_ctx = {"roles": ["_admin"]};
+    }
+    replicator_db.saveDoc(replication_doc_to_other, function(err, resp) {
+        if (err) return humane.error(err);
+        window.location.reload();
+    });
 }
