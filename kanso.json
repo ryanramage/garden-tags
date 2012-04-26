@@ -2,8 +2,21 @@
     "name": "tags",
     "version": "0.0.1",
     "description": "A tag management app",
+    "long_description": "Tags is a common point for managing and sharing tags across apps. It makes it easy to have a shared set of tags across apps. Also it lets you see what is tagged across all apps.",
     "url": "https://github.com/ryanramage/garden-tags",
     "categories": ["tags"],
+    "icons": {
+        "16": "static/icons/icon_16.png",
+        "48": "static/icons/icon_48.png",
+        "96": "static/icons/icon_96.png",
+        "128": "static/icons/icon_128.png"
+    },
+    "promo_images": {
+        "small": "static/images/promo_small.png"
+    },
+    "screenshots": [
+        "static/images/screenshot1.png"
+    ],
     "attachments": ["static", "index.html"],
     "modules": "lib",
     "load": "lib/app",
@@ -19,7 +32,6 @@
         "modules": null,
         "less-precompiler": null,
         "bootstrap-less" : null,
-        "less-precompiler": null,
         "properties": null,
         "underscore": null,
         "async": null,
@@ -27,6 +39,7 @@
         "handlebars-helpers": "0.0.2",
         "git-info" : null,
         "db" : null,
-        "session" : null
+        "session" : null,
+        "jsonselect" : null
     }
 }
