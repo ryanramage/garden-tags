@@ -160,8 +160,10 @@ function adminSection() {
                     });
                 }
             ], function(err, results) {
-                var options = _.flatten(results);
-                console.log(options);
+
+                var options = _.unique(_.flatten(results), false, function(doc) {
+                    return doc.db;
+                });
                 $('.new-sync').html(handlebars.templates['sync_choices.html']({options: options}));
 
 
