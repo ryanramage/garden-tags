@@ -1,6 +1,6 @@
 {
     "name": "tags",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "A tag management app",
     "long_description": "Tags is a common point for managing and sharing tags across apps. It makes it easy to have a shared set of tags across apps. Also it lets you see what is tagged across all apps.",
     "url": "https://github.com/ryanramage/garden-tags",
