@@ -202,22 +202,76 @@ function startSync(db_to_sync) {
 
 
 function runSync(tags_db, db_to_sync, secure) {
-    // from tags to other
-    var replication_doc_to_other = {
-        source : tags_db,
-        target : db_to_sync,
-        continuous : true,
-        filter : ddocName + '/tags_only',
-        garden_tag_sync : true
-    };
-    if (secure) {
-        replication_doc_to_other.user_ctx = {"roles": ["_admin"]};
-    }
-    replicator_db.saveDoc(replication_doc_to_other, function(err, resp) {
+
+
+    async.parallel([
+        function(callback) {
+            // from tags to other
+            var replication_doc_to_other = {
+                source : tags_db,
+                target : db_to_sync,
+                continuous : true,
+                filter : ddocName + '/tags_only',
+                garden_tag_sync : true
+            };
+            if (secure) {
+                replication_doc_to_other.user_ctx = {"roles": ["_admin"]};
+            }
+            replicator_db.saveDoc(replication_doc_to_other, function(err, resp) {
+                callback(err);
+            });
+        },
+        function(callback) {
+
+            create_sync_doc(db_to_sync, function(err){
+                // from other to tags
+                var replication_doc_to_other = {
+                    source : db_to_sync,
+                    target : tags_db,
+
+                    continuous : true,
+                    filter :  'tags-sync/tags_only',
+                    garden_tag_sync : true
+                };
+                if (secure) {
+                    replication_doc_to_other.user_ctx = {"roles": ["_admin"]};
+                }
+                replicator_db.saveDoc(replication_doc_to_other, function(err, resp) {
+                    callback(err);
+                });
+            });
+
+
+        }
+    ], function(err, results){
         if (err) return humane.error(err);
         window.location.reload();
     });
 }
+
+function create_sync_doc(db_to_sync, callback) {
+    var db_temp = require('db').use('_couch/' + db_to_sync);
+    db_temp.saveDoc(tags_sync_ddoc(), function(err, result) {
+        callback(err);
+    });
+}
+
+
+
+function tags_sync_ddoc() {
+    return {
+        _id : '_design/tags-sync',
+        filters : {
+            tags_only : "function(doc, req) { if (doc.type && doc.type ==='garden.tag') return true; return false; }"
+        }
+    }
+}
+
+
+
+
+
+
 
 $(function(){
     $('.stop-sync').live('click', function() {
@@ -231,7 +285,29 @@ $(function(){
                 tr.hide(500, function() {
                     tr.remove();
                 })
-            })
+            });
+
+
+            // hack way to get rid of the other side of the replication
+            var tags_db = doc.source;
+            var db_to_sync = doc.target;
+
+            replicator_db.allDocs({include_docs:true},function(err, data) {
+                var other_side = _.find(data.rows, function(row){
+                    if (!row.doc.garden_tag_sync) return false;
+                    if (row.doc._replication_state !==  "triggered") return false;
+                    if (!row.doc.continuous) return false;
+                    if (row.doc.source !== db_to_sync) return false;
+                    if (row.doc.target !== tags_db) return false;
+                    return true;
+                });
+                console.log(other_side);
+                replicator_db.removeDoc(other_side.doc, function(err, resp) {
+
+                });
+            });
+
+
         });
     });
 })
